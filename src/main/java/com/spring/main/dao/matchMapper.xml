@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+    PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+    
+<mapper namespace="com.spring.main.dao.MatchInterface">
+	
+	<!-- 게시물 전채 개수 -->
+	<select id="mch_allCount" resultType="Integer">
+		SELECT COUNT(*) FROM matching
+	</select>
+	
+	<!-- 검색 후 게시물 전채 개수 -->
+	<select id="mch_searhCount" resultType="Integer" >
+		SELECT COUNT(*) FROM matching WHERE ${param2} like '%'||#{param1}||'%'
+	</select>
+	
+	<!-- 리스트 불러오기 -->
+	<select id="mch_listCall" resultType="com.spring.main.dto.MatchDto">
+		SELECT mch_idx,mch_name , mch_area, mch_ground, mch_age, mch_type, mch_time, mch_content, mch_title, mch_wrdate, mch_reple, mch_vcount, mch_date, mch_state, mch_lat, mch_lng FROM (
+			SELECT mch_idx, mch_name , mch_area, mch_ground, mch_age, mch_type, mch_time, mch_content, mch_title, mch_wrdate, mch_reple, mch_vcount, mch_date, mch_state, mch_lat, mch_lng, ROW_NUMBER() OVER(ORDER BY mch_idx DESC) AS rnum FROM matching
+  		)WHERE rnum BETWEEN #{param1} AND #{param2}
+	</select>
+	
+	<!-- 검색 후 리스트 추가 -->
+	<select id="mch_searhCall" resultType="com.spring.main.dto.MatchDto">
+		SELECT mch_idx,mch_name , mch_area, mch_ground, mch_age, mch_type, mch_time, mch_content, mch_title, mch_wrdate, mch_reple, mch_vcount, mch_date, mch_state, mch_lat, mch_lng FROM (
+			SELECT mch_idx, mch_name , mch_area, mch_ground, mch_age, mch_type, mch_time, mch_content, mch_title, mch_wrdate, mch_reple, mch_vcount, mch_date, mch_state, mch_lat, mch_lng, ROW_NUMBER() OVER(ORDER BY mch_idx DESC) AS rnum FROM matching
+  		WHERE ${param4} like '%'||#{param3}||'%' )WHERE rnum BETWEEN #{param1} AND #{param2}
+	</select>
+	
+	<!-- 장소목록 불러오기 -->
+	<select id="mch_areaList" resultType="com.spring.main.dto.AreaDto">
+		SELECT *  FROM area
+	</select>
+	
+	<!-- 매칭 리스트 추가 -->
+	<insert id="mch_write">
+		INSERT INTO matching(totalIdx, mch_idx, t_idx, mch_title, mch_name, mch_date, mch_time, mch_type, mch_age, mch_content, mch_lat, mch_lng, mch_area, mch_ground, mch_state) 
+		VALUES(total_seq.NEXTVAL, matching_seq.NEXTVAL, #{param1}, #{param2}, #{param3}, #{param4}, #{param5}, #{param6}, #{param7}, #{param8}, #{param9}, #{param10}, #{param11}, #{param12}, #{param13})
+	</insert>
+	
+	<!-- 매칭 수정 -->
+	<update id="mch_modify">
+		UPDATE matching SET mch_title=#{param1},  mch_date=#{param2}, mch_time=#{param3}, mch_type=#{param4}, mch_age=#{param5}, mch_content=#{param6}, mch_lat=#{param7}, mch_lng=#{param8}, mch_area=#{param9}, mch_ground=#{param10}, mch_state=#{param11} WHERE mch_idx=#{param12}
+	</update>
+	
+	<!-- 매칭 상세보기 -->
+	<select id="mch_detail" resultType="com.spring.main.dto.MatchDto">
+		SELECT * FROM matching WHERE mch_idx=#{param1}
+	</select>
+	
+	<!-- 댓글 등록 -->
+	<insert id="mch_replyRegist">
+		INSERT INTO reple(r_idx, r_category, mch_idx, r_writer, r_reple) VALUES(reple_seq.NEXTVAL, #{param1}, #{param2}, #{param3}, #{param4})
+	</insert>
+	
+	<!-- 댓글 수 업 -->
+	<update id="mch_replyUp">
+		UPDATE matching SET mch_reple=mch_reple+1 WHERE totalIdx=#{param1}
+	</update>
+	
+	<!-- 댓글 수 다운 -->
+	<update id="mch_repleDown">
+		UPDATE matching SET mch_reple=mch_reple-1 WHERE totalIdx=#{param1}
+	</update>
+	
+	<!-- 댓글 리스트 -->
+	<select id="mch_replyList" resultType="com.spring.main.dto.RepleDto">
+		SELECT * FROM reple WHERE mch_idx=#{param1} AND r_category=#{param2} ORDER BY r_idx ASC
+	</select>
+	
+	<!-- 댓글 삭제(개인) -->
+	<delete id="mch_replyDel">
+		DELETE FROM reple WHERE r_idx=#{param1} AND r_category=#{param2}
+	</delete>
+	
+	<!-- 유저가 속한 팀 정보(대표만) -->
+	<select id="selectTeam" resultType="com.spring.main.dto.SelectTeamDto">
+		SELECT m.t_idx, t.t_name FROM member m, team t WHERE m.u_idx=(SELECT u_idx FROM SGM_user WHERE u_idx=#{param1}) and m.t_idx=t.t_idx and m_grade='대표'
+	</select>
+	
+	<!-- 글 삭제 -->
+	<delete id="delete">
+		DELETE FROM matching WHERE mch_idx=#{param1}
+	</delete>
+	
+	
+	<!-- 조회수 -->
+	<update id="vcountUp">
+		UPDATE matching SET mch_vcount=mch_vcount+1 WHERE mch_idx=#{param1}
+	</update>
+</mapper>
